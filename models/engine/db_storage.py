@@ -55,17 +55,6 @@ Class DBStorage:
         """add the object to the current database session"""
         self.__session.add(obi)
 
-    def get(self, cls, id):
-        """Returns the object based on the class and its ID, or None if not found"""
-        return self.__session.query(cls).get(id)
-
-    def count(self, cls=None):
-        """Returns the number of objects in storage matching the given class. 
-        If no class is passed, returns the count of all objects in storage."""
-        if cls:
-            return self.__session.query(cls).count()
-        return sum(self.__session.query(cls).count() for cls in classes.values())
-
     def save(self):
         """commit all changes of the current database session"""
         self.session.commit()
@@ -85,3 +74,22 @@ Class DBStorage:
     def close(self):
         """call remove() method on the private session attribute"""
         self.__session.remove()
+
+    def count(self, cls=None):
+        """Returns the number of objects in storage matching the given class. 
+        If no class is passed, returns the count of all objects in storage."""
+        if cls is None:
+            return len(models.storage.all())
+        return len(models.storage.all(cls))
+
+    def get(self, cls, id):
+        """Returns the object based on the class and its ID,
+        or None if not found"""
+        if id is None or cls is None:
+            return None
+        if type(cls) is str:
+            if cls not in classes:
+                return None
+            cls = classes[cls]
+        save = models.storage.all(cls)
+        return save.get("{}.{}".format(cls.__name__, id))
